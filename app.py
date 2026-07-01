@@ -1,288 +1,609 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 # =====================================================
-# KONFIGURASI HALAMAN
+# KONFIGURASI
 # =====================================================
 
 st.set_page_config(
-    page_title="Dashboard Superstore",
+    page_title="Interaksi Visualisasi Data",
     page_icon="📊",
     layout="wide"
 )
 
+st.markdown("""
+<style>
 
-st.title("📊 Dashboard Sample Superstore")
-st.markdown("Dashboard interaktif menggunakan dataset **Sample Superstore**.")
+.main{
+    background-color:#F6F3EC;
+}
+
+.block-container{
+    max-width:1250px;
+    padding-top:2rem;
+    padding-bottom:2rem;
+}
+
+h1{
+    color:#082338;
+    font-weight:800;
+}
+
+h2{
+    color:#082338;
+    font-weight:700;
+}
+
+.stTabs [data-baseweb="tab-list"]{
+    gap:15px;
+}
+
+.stTabs [data-baseweb="tab"]{
+
+    background:#ffffff;
+
+    color:#082338 !important;
+
+    border-radius:12px;
+
+    padding:12px 25px;
+
+    font-size:17px;
+
+    font-weight:700;
+
+    border:2px solid #082338;
+
+    transition:0.3s;
+
+}
+
+/* Saat mouse diarahkan */
+.stTabs [data-baseweb="tab"]:hover{
+
+    background:#0f4c81 !important;
+
+    color:white !important;
+
+}
+
+/* Tab aktif */
+.stTabs [aria-selected="true"]{
+
+    background:#082338 !important;
+
+    color:white !important;
+
+}
+
+/* Paksa warna tulisan */
+.stTabs [data-baseweb="tab"] p{
+
+    color:inherit !important;
+
+    font-weight:700;
+
+}
+
+div[data-testid="stPlotlyChart"]{
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+
+}
+
+.stInfo{
+
+    border-radius:15px;
+
+}
+
+.stSuccess{
+
+    border-radius:15px;
+
+}
+
+.stMultiSelect{
+
+    margin-bottom:15px;
+
+}
+
+.stSelectbox{
+
+    margin-bottom:15px;
+
+}
+
+footer{
+
+    visibility:hidden;
+
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
-# MEMBACA DATA
+# JUDUL
 # =====================================================
 
-df = pd.read_csv("Sample - Superstore.csv", encoding="latin1")
+st.title("📊 Teknik Interaksi Visualisasi Data")
 
-# Ubah Order Date menjadi format datetime
-df["Order Date"] = pd.to_datetime(df["Order Date"])
-
-# Tambahkan kolom bulan
-df["MonthNum"] = df["Order Date"].dt.month
-df["Month"] = df["Order Date"].dt.strftime("%b")
-
-# =====================================================
-# SIDEBAR FILTER
-# =====================================================
-
-# =====================================================
-# SIDEBAR
-# =====================================================
-
-with st.sidebar:
-
-    st.title("📊 Dashboard")
-
-    st.markdown("---")
-
-    st.markdown("""
-
-### 👨‍🎓 Informasi
-**Nama :** Raja Amar Siregar
-
-**NPM :** 2024210111P
-
-**Mata Kuliah :** Analisis Visualisasi Data
-
-**Dataset :** Sample Superstore
-""")
-
-    st.markdown("---")
-
-    st.subheader("🔎 Filter Data")
-
-    region = st.multiselect(
-        "🌍 Region",
-        options=df["Region"].unique(),
-        default=df["Region"].unique()
-    )
-
-    category = st.multiselect(
-        "📦 Category",
-        options=df["Category"].unique(),
-        default=df["Category"].unique()
-    )
-
-    segment = st.multiselect(
-        "👥 Segment",
-        options=df["Segment"].unique(),
-        default=df["Segment"].unique()
-    )
-
-# =====================================================
-# FILTER DATA
-# =====================================================
-
-df_filter = df[
-    (df["Region"].isin(region)) &
-    (df["Category"].isin(category)) &
-    (df["Segment"].isin(segment))
-]
-
-# Ringkasan Sidebar
-
-with st.sidebar:
-
-    st.markdown("---")
-
-    st.caption("© 2026 Dashboard Superstore by Raja")
-
-# =====================================================
-# KPI
-# =====================================================
-
-total_sales = df_filter["Sales"].sum()
-total_profit = df_filter["Profit"].sum()
-total_orders = len(df_filter)
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric("💰 Total Sales", f"${total_sales:,.0f}")
-col2.metric("📈 Total Profit", f"${total_profit:,.0f}")
-col3.metric("🛒 Total Orders", total_orders)
-
-st.divider()
-
-# =====================================================
-# VISUALISASI 1
-# BAR CHART
-# =====================================================
-
-st.subheader("📊 Visualisasi 1 : Total Sales per Category")
-st.success("✅ Fitur Interaktif : Hover & Zoom")
-
-sales_category = (
-    df_filter.groupby("Category")
-    .agg(
-        Sales=("Sales", "sum"),
-        Profit=("Profit", "sum"),
-        Orders=("Order ID", "count")
-    )
-    .reset_index()
+st.write(
+"""
+Contoh implementasi berbagai teknik interaksi visualisasi
+menggunakan dataset **Sample Superstore**.
+"""
 )
-
-fig = px.bar(
-    sales_category,
-    x="Category",
-    y="Sales",
-    color="Category",
-    text_auto=".2s",
-    title="Total Sales per Category",
-    hover_data={
-        "Sales": ":,.2f",
-        "Profit": ":,.2f",
-        "Orders": True
-    }
-)
-
-fig.update_layout(
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# =====================================================
-# DATA UNTUK VISUALISASI 2
-# =====================================================
-
-monthly_sales = (
-    df_filter.groupby("Month")["Sales"]
-    .sum()
-    .reset_index()
-)
-
-month_order = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec"
-]
-
-monthly_sales["Month"] = pd.Categorical(
-    monthly_sales["Month"],
-    categories=month_order,
-    ordered=True
-)
-
-monthly_sales = monthly_sales.sort_values("Month")
-
-# =====================================================
-# VISUALISASI 2
-# LINE CHART
-# =====================================================
-
-st.subheader("📈 Visualisasi 2 : Sales Trend per Month")
-
-st.success("✅ Fitur Interaktif : Hover & Zoom")
-
-fig2 = px.line(
-    monthly_sales,
-    x="Month",
-    y="Sales",
-    markers=True,
-    title="Monthly Sales Trend",
-)
-
-fig2.update_traces(
-    line=dict(width=3),
-    marker=dict(size=8),
-    hovertemplate="<b>Bulan : %{x}</b><br>Total Sales : $%{y:,.2f}<extra></extra>"
-)
-
-fig2.update_layout(
-    hovermode="x unified",
-    xaxis_title="Month",
-    yaxis_title="Sales ($)"
-)
-
-st.plotly_chart(fig2, use_container_width=True)
-
-
-# =====================================================
-# VISUALISASI 3
-# DRILL DOWN
-# =====================================================
-
-st.subheader("📌 Visualisasi 3 : Drill Down Category → Sub-Category")
-
-st.success("✅ Fitur Interaktif : Drill Down + Hover + Zoom")
-
-selected_category = st.selectbox(
-    "Pilih Category",
-    df_filter["Category"].unique()
-)
-
-drill_data = (
-    df_filter[df_filter["Category"] == selected_category]
-    .groupby("Sub-Category")["Sales"]
-    .sum()
-    .reset_index()
-)
-
-fig3 = px.bar(
-    drill_data,
-    x="Sub-Category",
-    y="Sales",
-    color="Sub-Category",
-    text_auto=".2s",
-    title=f"Sales Sub-Category ({selected_category})"
-)
-
-fig3.update_traces(
-    hovertemplate="<b>%{x}</b><br>Sales : $%{y:,.2f}<extra></extra>"
-)
-
-st.plotly_chart(fig3, use_container_width=True)
-
-# =====================================================
-# DATA UNTUK MAPS
-# =====================================================
-
-state_sales = (
-    df_filter.groupby("State")["Sales"]
-    .sum()
-    .reset_index()
-)
-
-# =====================================================
-# VISUALISASI 4
-# INTERACTIVE MAP
-# =====================================================
-
-st.subheader("🗺️ Visualisasi 4 : Sales by State")
-
-st.success("✅ Fitur Interaktif : Hover + Zoom + Maps")
-
-fig4 = px.scatter_geo(
-    state_sales,
-    locations="State",
-    locationmode="USA-states",
-    scope="usa",
-    size="Sales",
-    color="Sales",
-    hover_name="State",
-    title="Sales Distribution Across States"
-)
-
-fig4.update_layout(
-    geo=dict(
-        showland=True
-    )
-)
-
-st.plotly_chart(fig4, use_container_width=True)
-
-
 
 # =====================================================
 # DATASET
 # =====================================================
 
-with st.expander("📄 Lihat Dataset"):
-    st.dataframe(df_filter)
+df = pd.read_csv(
+    "Sample - Superstore.csv",
+    encoding="latin1"
+)
+
+df["Order Date"] = pd.to_datetime(df["Order Date"])
+
+df["Month"] = df["Order Date"].dt.strftime("%b")
+
+bulan = [
+    "Jan","Feb","Mar","Apr",
+    "May","Jun","Jul","Aug",
+    "Sep","Oct","Nov","Dec"
+]
+
+df["Month"] = pd.Categorical(
+    df["Month"],
+    categories=bulan,
+    ordered=True
+)
+# =====================================================
+# TAB
+# =====================================================
+
+hover_tab, filter_tab, zoom_tab, drill_tab, map_tab = st.tabs([
+    "🖱 Hover",
+    "🔍 Filter",
+    "🔎 Zoom",
+    "📌 Drill-down",
+    "🗺 Peta"
+])
+
+# =====================================================
+# HOVER
+# =====================================================
+
+with hover_tab:
+
+    st.markdown("## 🖱 Hover — Detail Tepat Saat Dibutuhkan")
+
+    st.write(
+        """
+        Menyembunyikan nilai detail hingga pengguna mengarahkan
+        kursor ke titik data. Teknik ini menjaga visual tetap bersih
+        namun informasi lengkap tetap tersedia melalui **hover**.
+        """
+    )
+
+    monthly = (
+        df.groupby("Month")["Sales"]
+        .sum()
+        .reset_index()
+    )
+
+    fig = px.line(
+        monthly,
+        x="Month",
+        y="Sales",
+        markers=True
+    )
+
+    fig.update_traces(
+        line=dict(
+            color="#11c5d9",
+            width=4
+        ),
+        marker=dict(
+            size=9,
+            color="#11c5d9"
+        ),
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        "Sales : <b>$%{y:,.2f}</b>" +
+        "<extra></extra>"
+    )
+
+    fig.update_layout(
+
+        height=480,
+
+        paper_bgcolor="#082338",
+        plot_bgcolor="#082338",
+
+        font=dict(
+            color="white",
+            size=16
+        ),
+
+        hovermode="x unified",
+
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=20
+        ),
+
+        xaxis=dict(
+            title="",
+            showgrid=False
+        ),
+
+        yaxis=dict(
+            title="Sales",
+            gridcolor="#1d425d"
+        )
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.caption(
+        "Arahkan kursor ke titik mana pun pada grafik untuk melihat detail penjualan."
+    )
+
+# =====================================================
+# FILTER
+# =====================================================
+
+with filter_tab:
+
+    st.markdown("## 🔍 Filter — Mempersempit Tanpa Menghapus Konteks")
+
+    st.write(
+        """
+        Filter memungkinkan pengguna memfokuskan visualisasi
+        pada kategori tertentu tanpa kehilangan konteks keseluruhan data.
+        """
+    )
+
+    kategori = st.multiselect(
+        "Pilih Category",
+        options=df["Category"].unique(),
+        default=df["Category"].unique()
+    )
+
+    region = st.multiselect(
+        "Pilih Region",
+        options=df["Region"].unique(),
+        default=df["Region"].unique()
+    )
+
+    df_filter = df[
+        (df["Category"].isin(kategori)) &
+        (df["Region"].isin(region))
+    ]
+
+    sales = (
+        df_filter
+        .groupby("Category")["Sales"]
+        .sum()
+        .reset_index()
+    )
+
+    fig2 = px.bar(
+        sales,
+        x="Category",
+        y="Sales",
+        color="Category",
+        text_auto=".2s"
+    )
+
+    fig2.update_traces(
+
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        "Sales : $%{y:,.2f}" +
+        "<extra></extra>"
+
+    )
+
+    fig2.update_layout(
+
+        height=500,
+
+        paper_bgcolor="#082338",
+        plot_bgcolor="#082338",
+
+        font=dict(
+            color="white",
+            size=16
+        ),
+
+        showlegend=False,
+
+        xaxis_title="",
+
+        yaxis_title="Sales",
+
+        yaxis=dict(
+            gridcolor="#1d425d"
+        )
+    )
+
+    st.plotly_chart(
+        fig2,
+        use_container_width=True
+    )
+
+    st.caption(
+        "Gunakan filter di atas untuk mengubah isi grafik."
+    )
+
+# =====================================================
+# ZOOM
+# =====================================================
+
+with zoom_tab:
+
+    st.markdown("## 🔎 Zoom — Fokus pada Detail Data")
+
+    st.write(
+        """
+        Plotly menyediakan fitur zoom secara otomatis.
+        Pengguna dapat melakukan **drag**, **scroll**, dan **pan**
+        untuk melihat bagian tertentu dari grafik dengan lebih detail.
+        """
+    )
+
+    monthly_sales = (
+        df.groupby("Month")["Sales"]
+        .sum()
+        .reset_index()
+    )
+
+    fig3 = px.area(
+        monthly_sales,
+        x="Month",
+        y="Sales"
+    )
+
+    fig3.update_traces(
+        line=dict(
+            color="#20d6c7",
+            width=3
+        ),
+        fillcolor="rgba(32,214,199,0.35)",
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        "Sales : $%{y:,.2f}<extra></extra>"
+    )
+
+    fig3.update_layout(
+
+        height=500,
+
+        paper_bgcolor="#082338",
+        plot_bgcolor="#082338",
+
+        font=dict(
+            color="white",
+            size=16
+        ),
+
+        hovermode="x unified",
+
+        xaxis=dict(
+            title="Month",
+            showgrid=False
+        ),
+
+        yaxis=dict(
+            title="Sales",
+            gridcolor="#1d425d"
+        )
+    )
+
+    st.plotly_chart(
+        fig3,
+        use_container_width=True,
+        config={
+            "scrollZoom": True,
+            "displaylogo": False
+        }
+    )
+
+    st.info(
+        "💡 Coba drag grafik untuk Zoom, double-click untuk kembali ke tampilan awal."
+    )
+# =====================================================
+# DRILL DOWN
+# =====================================================
+
+with drill_tab:
+
+    st.markdown("## 📌 Drill-down — Dari Category ke Sub-Category")
+
+    st.write(
+        """
+        Drill-down memungkinkan pengguna berpindah dari data yang
+        bersifat umum ke data yang lebih rinci.
+        """
+    )
+
+    col1, col2 = st.columns([1,3])
+
+    with col1:
+
+        selected_category = st.selectbox(
+            "Category",
+            sorted(df["Category"].unique())
+        )
+
+    drill = (
+        df[df["Category"] == selected_category]
+        .groupby("Sub-Category", as_index=False)
+        .agg({
+            "Sales":"sum",
+            "Profit":"sum"
+        })
+        .sort_values(
+            "Sales",
+            ascending=False
+        )
+    )
+
+    fig4 = px.bar(
+
+        drill,
+
+        x="Sub-Category",
+
+        y="Sales",
+
+        color="Profit",
+
+        color_continuous_scale="Tealgrn",
+
+        text_auto=".2s"
+
+    )
+
+    fig4.update_traces(
+
+        hovertemplate=
+        "<b>%{x}</b><br>" +
+        "Sales : $%{y:,.2f}<br>" +
+        "Profit : %{marker.color:,.2f}<extra></extra>"
+
+    )
+
+    fig4.update_layout(
+
+        height=520,
+
+        paper_bgcolor="#082338",
+
+        plot_bgcolor="#082338",
+
+        font=dict(
+            color="white",
+            size=16
+        ),
+
+        xaxis_title="",
+
+        yaxis_title="Sales",
+
+        yaxis=dict(
+            gridcolor="#1d425d"
+        )
+    )
+
+    st.plotly_chart(
+        fig4,
+        use_container_width=True
+    )
+
+# =====================================================
+# MAP
+# =====================================================
+
+with map_tab:
+
+    st.markdown("## 🗺️ Peta Persebaran Penjualan")
+
+    st.write(
+        """
+        Visualisasi geografis memperlihatkan persebaran total
+        penjualan pada setiap negara bagian di Amerika Serikat.
+        """
+    )
+
+    state_sales = (
+        df.groupby("State", as_index=False)["Sales"]
+        .sum()
+    )
+
+    fig5 = px.scatter_geo(
+
+        state_sales,
+
+        locations="State",
+
+        locationmode="USA-states",
+
+        scope="usa",
+
+        size="Sales",
+
+        color="Sales",
+
+        hover_name="State",
+
+        color_continuous_scale="Tealgrn"
+
+    )
+
+    fig5.update_layout(
+
+        height=650,
+
+        paper_bgcolor="#082338",
+
+        plot_bgcolor="#082338",
+
+        font=dict(
+            color="white",
+            size=15
+        ),
+
+        geo=dict(
+
+            bgcolor="#082338",
+
+            lakecolor="#082338",
+
+            landcolor="#082338",
+
+            showland=True
+
+        )
+    )
+
+    st.plotly_chart(
+        fig5,
+        use_container_width=True
+    )
+
+    st.caption(
+        "Ukuran lingkaran menunjukkan besarnya total penjualan pada masing-masing state."
+    )
+
+    st.divider()
+
+st.markdown(
+"""
+<div style='text-align:center;
+padding:20px;
+color:gray;
+font-size:15px;'>
+
+
+
+</div>
+""",
+unsafe_allow_html=True
+)
